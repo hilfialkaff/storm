@@ -31,13 +31,13 @@
                     forced-scheduler
                     (do (log-message "Using forced scheduler from INimbus " (class forced-scheduler))
                         forced-scheduler)
-    
+
                     (conf STORM-SCHEDULER)
                     (do (log-message "Using custom scheduler: " (conf STORM-SCHEDULER))
                         (-> (conf STORM-SCHEDULER) new-instance))
-    
+
                     :else
-                    (do (log-message "Using default scheduler")
+                    (do (log-message "Using default123 scheduler")
                         (DefaultScheduler.)))]
     (.prepare scheduler conf)
     scheduler
@@ -125,7 +125,7 @@
   (mk-assignments nimbus :scratch-topology-id storm-id))
 
 (defn state-transitions [nimbus storm-id status]
-  {:active {:inactivate :inactive            
+  {:active {:inactivate :inactive
             :activate nil
             :rebalance (rebalance-transition nimbus storm-id status)
             :kill (kill-transition nimbus storm-id)
@@ -268,7 +268,7 @@
   [nimbus topologies missing-assignment-topologies]
   (let [storm-cluster-state (:storm-cluster-state nimbus)
         ^INimbus inimbus (:inimbus nimbus)
-        
+
         supervisor-infos (all-supervisor-info storm-cluster-state nil)
 
         supervisor-details (dofor [[id info] supervisor-infos]
@@ -444,7 +444,7 @@
                                          all-executors
                                          (set (alive-executors nimbus topology-details all-executors assignment)))]]
              {tid alive-executors})))
-  
+
 (defn- compute-supervisor->dead-ports [nimbus existing-assignments topology->executors topology->alive-executors]
   (let [dead-slots (into [] (for [[tid assignment] existing-assignments
                                   :let [all-executors (topology->executors tid)
@@ -490,7 +490,7 @@
                                                                   ((fn [ports] (map int ports))))
                                                     supervisor-details (SupervisorDetails. sid hostname scheduler-meta all-ports)]]
                                           {sid supervisor-details}))]
-    (merge all-supervisor-details 
+    (merge all-supervisor-details
            (into {}
               (for [[sid ports] nonexistent-supervisor-slots]
                 [sid (SupervisorDetails. sid nil ports)]))
@@ -552,7 +552,7 @@
         topology->scheduler-assignment (compute-topology->scheduler-assignment nimbus
                                                                                existing-assignments
                                                                                topology->alive-executors)
-                                                                               
+
         missing-assignment-topologies (->> topologies
                                            .getTopologies
                                            (map (memfn getId))
@@ -570,7 +570,7 @@
         all-scheduling-slots (->> (all-scheduling-slots nimbus topologies missing-assignment-topologies)
                                   (map (fn [[node-id port]] {node-id #{port}}))
                                   (apply merge-with set/union))
-        
+
         supervisors (read-all-supervisor-details nimbus all-scheduling-slots supervisor->dead-ports)
         cluster (Cluster. (:inimbus nimbus) supervisors topology->scheduler-assignment)
 
@@ -632,7 +632,7 @@
 (defnk mk-assignments [nimbus :scratch-topology-id nil]
   (let [conf (:conf nimbus)
         storm-cluster-state (:storm-cluster-state nimbus)
-        ^INimbus inimbus (:inimbus nimbus) 
+        ^INimbus inimbus (:inimbus nimbus)
         ;; read all the topologies
         topology-ids (.active-storms storm-cluster-state)
         topologies (into {} (for [tid topology-ids]
@@ -652,12 +652,12 @@
                                        existing-assignments
                                        topologies
                                        scratch-topology-id)
-        
-        
+
+
         now-secs (current-time-secs)
-        
+
         basic-supervisor-details-map (basic-supervisor-details-map storm-cluster-state)
-        
+
         ;; construct the final Assignments by adding start-times etc into it
         new-assignments (into {} (for [[topology-id executor->node+port] topology->executor->node+port
                                         :let [existing-assignment (get existing-assignments topology-id)
@@ -695,14 +695,14 @@
     (->> new-assignments
           (map (fn [[topology-id assignment]]
             (let [existing-assignment (get existing-assignments topology-id)]
-              [topology-id (map to-worker-slot (newly-added-slots existing-assignment assignment))] 
+              [topology-id (map to-worker-slot (newly-added-slots existing-assignment assignment))]
               )))
           (into {})
           (.assignSlots inimbus topologies))
     ))
 
 (defn- start-storm [nimbus storm-name storm-id topology-initial-status]
-  {:pre [(#{:active :inactive} topology-initial-status)]}                
+  {:pre [(#{:active :inactive} topology-initial-status)]}
   (let [storm-cluster-state (:storm-cluster-state nimbus)
         conf (:conf nimbus)
         storm-conf (read-storm-conf conf storm-id)
@@ -858,8 +858,8 @@
   (if (some #(.contains name %) DISALLOWED-TOPOLOGY-NAME-STRS)
     (throw (InvalidTopologyException.
             (str "Topology name cannot contain any of the following: " (pr-str DISALLOWED-TOPOLOGY-NAME-STRS))))
-  (if (clojure.string/blank? name) 
-    (throw (InvalidTopologyException. 
+  (if (clojure.string/blank? name)
+    (throw (InvalidTopologyException.
             ("Topology name cannot be blank"))))))
 
 (defn- try-read-storm-conf [conf storm-id]
@@ -901,7 +901,7 @@
                         (conf NIMBUS-CLEANUP-INBOX-FREQ-SECS)
                         (fn []
                           (clean-inbox (inbox nimbus) (conf NIMBUS-INBOX-JAR-EXPIRATION-SECS))
-                          ))    
+                          ))
     (reify Nimbus$Iface
       (^void submitTopologyWithOpts
         [this ^String storm-name ^String uploadedJarLocation ^String serializedConf ^StormTopology topology
@@ -943,19 +943,19 @@
           (catch Throwable e
             (log-warn-error e "Topology submission exception. (topology name='" storm-name "')")
             (throw e))))
-      
+
       (^void submitTopology
         [this ^String storm-name ^String uploadedJarLocation ^String serializedConf ^StormTopology topology]
         (.submitTopologyWithOpts this storm-name uploadedJarLocation serializedConf topology
                                  (SubmitOptions. TopologyInitialStatus/ACTIVE)))
-      
+
       (^void killTopology [this ^String name]
         (.killTopologyWithOpts this name (KillOptions.)))
 
       (^void killTopologyWithOpts [this ^String storm-name ^KillOptions options]
         (check-storm-active! nimbus storm-name true)
         (let [wait-amt (if (.is_set_wait_secs options)
-                         (.get_wait_secs options)                         
+                         (.get_wait_secs options)
                          )]
           (transition-name! nimbus storm-name [:kill wait-amt] true)
           ))
@@ -1068,10 +1068,10 @@
                                                             (->> (:executor->node+port assignment)
                                                                  keys
                                                                  (mapcat executor-id->tasks)
-                                                                 count) 
+                                                                 count)
                                                             (->> (:executor->node+port assignment)
                                                                  keys
-                                                                 count)                                                            
+                                                                 count)
                                                             (->> (:executor->node+port assignment)
                                                                  vals
                                                                  set
@@ -1083,7 +1083,7 @@
                            nimbus-uptime
                            topology-summaries)
           ))
-      
+
       (^TopologyInfo getTopologyInfo [this ^String storm-id]
         (let [storm-cluster-state (:storm-cluster-state nimbus)
               task->component (storm-task-info (try-read-storm-topology conf storm-id) (try-read-storm-conf conf storm-id))
@@ -1117,7 +1117,7 @@
                          errors
                          )
           ))
-      
+
       Shutdownable
       (shutdown [this]
         (log-message "Shutting down master")
