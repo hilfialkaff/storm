@@ -4,4 +4,4 @@
 
 bash ./bin/build_release.sh
 unzip ./storm-0.9.0.1.zip
-cp ./scripts/storm.yaml ./storm-0.9.0.1/conf/
+cp ./scripts/emulab.yaml ./storm-0.9.0.1/conf/storm.yaml
