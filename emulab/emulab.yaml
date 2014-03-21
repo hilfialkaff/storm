@@ -32,12 +32,12 @@
 #       - endpoint: "metrics-collector.mycompany.org"
 
 storm.zookeeper.servers:
-  - "hosts-1.storm.uiucnet.emulab.net"
+  - "client-1.storm.uiucnet.emulab.net"
 
 storm.local.dir: "/tmp/storm"
 storm.messaging.transport: "backtype.storm.messaging.netty.Context"
-storm.scheduler: "storm.NetworkScheduler"
-nimbus.host: "hosts-1.storm.uiucnet.emulab.net"
+# storm.scheduler: "storm.NetworkScheduler"
+nimbus.host: "client-1.storm.uiucnet.emulab.net"
 
 supervisor.slots.ports:
     - 6700
